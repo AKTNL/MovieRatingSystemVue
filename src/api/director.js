@@ -10,3 +10,5 @@ export const updateDirectorApi = (director) => request.put('/directors', directo
 
 // 删除导演
 export const deleteDirectorApi = (id) => request.delete(`/directors?DirectorID=${id}`);
+
+export const searchDirectorsApi = (query) => request.get(`/directors/search`, { params: { name: query } });

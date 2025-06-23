@@ -82,7 +82,8 @@ const handleDelete = (id) => {
       const res = await deleteDirectorApi(id);
       if (res.code) {
         ElMessage.success('删除成功');
-        search();
+
+        search(currentPage.value);
       } else {
         ElMessage.error(res.msg);
       }

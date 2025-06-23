@@ -2,33 +2,21 @@
 import { ref,onMounted } from 'vue'
 import { queryAllApi,addApi,deleteByIdApi,updateApi,getMovieForEditApi } from '@/api/movieManage'
 import { ElMessage,ElMessageBox } from 'element-plus';
-import { getAllActorsApi } from '@/api/actor'
-import { getAllDirectorsApi } from '@/api/director';
+import { searchActorsApi } from '@/api/actor'
+import { searchDirectorsApi } from '@/api/director';
 
 const directorList = ref([]);
 const actorList = ref([]);
+const directorLoading = ref(false); // 新增：控制导演搜索的加载状态
+const actorLoading = ref(false);    // 新增：控制演员搜索的加载状态
 
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(5);
 
-const searchDirectors = async () => {
-  const directorRes = await getAllDirectorsApi();
-  if (directorRes.code) directorList.value = directorRes.data;
-};
-
-const searchActors = async () => {
-  const actorRes = await getAllActorsApi();
-  if (actorRes.code) actorList.value = actorRes.data;
-};
-
 //钩子函数
-onMounted(async() => {
+onMounted(() => {
     search(1);
-
-    searchDirectors();
-    searchActors();
-
 })
 
 // 2. 修改 search 函数以支持分页
@@ -145,10 +133,14 @@ const save = async () => {
 
             // 2. 调用新增或更新API
             if (movie.value.movieID) {
+                console.log("准备发送给后端的更新数据:", movie.value);
                 const result = await updateApi(movie.value);
              
                 if (result.code) {
                     ElMessage.success('更新成功');
+                    // 关闭抽屉并刷新【当前页】
+                    drawerVisible.value = false;
+                    search(currentPage.value); // <-- 传递当前页码
                 } else {
                     ElMessage.error(result.msg || '更新失败');
                 }
@@ -157,14 +149,14 @@ const save = async () => {
 
                 if (result.code) {
                     ElMessage.success('新增成功');
+                    // 关闭抽屉并刷新【第一页】（通常新增后看第一页或最后一页）
+                    drawerVisible.value = false;
+                    search(1); // 新增后回到第一页是常见的做法
                 } else {
                     ElMessage.error(result.msg || '新增失败');
                 }
             }
 
-            // 3. 关闭抽屉并刷新列表
-            drawerVisible.value = false;
-            search();
             
         } else {
             // 验证失败
@@ -194,7 +186,7 @@ const deleteById = async (id) => {
         const result = await deleteByIdApi(id);
         if(result.code){ 
             ElMessage.success('删除成功');
-            search();
+            search(currentPage.value);
         }else{
             ElMessage.error(result.msg);
         }
@@ -267,6 +259,33 @@ const rules = {
     ]
 }
 
+// --- 新增：远程搜索导演的处理函数 ---
+const remoteSearchDirectors = async (query) => {
+  if (query) {
+    directorLoading.value = true;
+    const res = await searchDirectorsApi(query);
+    if (res.code) {
+      directorList.value = res.data;
+    }
+    directorLoading.value = false;
+  } else {
+    directorList.value = [];
+  }
+}
+
+// --- 新增：远程搜索演员的处理函数 ---
+const remoteSearchActors = async (query) => {
+  if (query) {
+    actorLoading.value = true;
+    const res = await searchActorsApi(query); // 假设你已创建
+    if (res.code) {
+      actorList.value = res.data;
+    }
+    actorLoading.value = false;
+  } else {
+    actorList.value = [];
+  }
+}
 </script>
 
 <template>
@@ -294,6 +313,11 @@ const rules = {
             </el-table-column>
 
             <el-table-column prop="title" label="名称" width="200" align="center"/>
+            
+            <el-table-column prop="directorName" label="导演" width="200" align="center"/>
+            
+            <el-table-column prop="actorsList" label="演员" width="200" align="center"/>
+
             <el-table-column prop="releaseYear" label="发行年份" width="120" align="center"/>
             <el-table-column prop="duration" label="时长（分钟）" width="120" align="center"/>
             <el-table-column prop="genre" label="类型" width="150" align="center"/>
@@ -345,7 +369,12 @@ const rules = {
                     v-model="movie.directorIds"
                     multiple
                     filterable
-                    placeholder="请选择或搜索导演"
+                    remote
+                    reserve-keyword
+
+                    placeholder="请输入导演名进行搜索"
+                    :remote-method="remoteSearchDirectors"
+                    :loading="directorLoading"
                     style="width: 100%;"
                 >
                     <el-option
@@ -362,8 +391,11 @@ const rules = {
                     v-model="movie.actorIds"
                     multiple
                     filterable
-                    remote  reserve-keyword
-                    placeholder="请选择或搜索演员"
+                    remote  
+                    reserve-keyword
+                    placeholder="请输入演员名进行搜索"
+                    :remote-method="remoteSearchActors"
+                    :loading="actorLoading"
                     style="width: 100%;"
                 >
                     <el-option
