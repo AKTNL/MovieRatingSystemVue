@@ -8,29 +8,48 @@ import { getAllDirectorsApi } from '@/api/director';
 const directorList = ref([]);
 const actorList = ref([]);
 
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(5);
+
+const searchDirectors = async () => {
+  const directorRes = await getAllDirectorsApi();
+  if (directorRes.code) directorList.value = directorRes.data;
+};
+
+const searchActors = async () => {
+  const actorRes = await getAllActorsApi();
+  if (actorRes.code) actorList.value = actorRes.data;
+};
+
 //钩子函数
 onMounted(async() => {
-    search();
+    search(1);
 
-    const directorRes = await getAllDirectorsApi();
-    if (directorRes.code) {
-        directorList.value = directorRes.data;
-    }
+    searchDirectors();
+    searchActors();
 
-    // 获取所有演员
-    const actorRes = await getAllActorsApi();
-    if (actorRes.code) {
-        actorList.value = actorRes.data;
-    }
 })
 
-//查询
-const search = async () => {
-    const result = await queryAllApi();
-    if (result.code) {//JS隐式类型转换 0,'',null,undefine == false ，其他值都为 true
-        movieList.value = result.data;
-    }
-}
+// 2. 修改 search 函数以支持分页
+const search = async (page = 1) => {
+  const params = { page: page, size: pageSize.value };
+  const res = await queryAllApi(params);
+  if (res.code) {
+    movieList.value = res.data.records;
+    total.value = res.data.total;
+    currentPage.value = page;
+  }
+};
+
+// 3. 新增处理分页改变的两个函数
+const handlePageChange = (newPage) => {
+  search(newPage);
+};
+const handleSizeChange = (newSize) => {
+  pageSize.value = newSize;
+  search(1); 
+};
 
 const movieList = ref([])
 
@@ -204,36 +223,7 @@ const handleAdd = () => {
 
 // 新增 handleEdit 函数
 const handleEdit = async(row) => {
-    // 1. 设置抽屉标题为“编辑电影”
-    formTitle.value = '编辑电影';
-
-    try{
-        const result = await queryAllApi(row.movieID);
-        if(result.code){
-            movie.value = result.data;
-            coverPreviewUrl.value = result.data.coverUrl || '';
-            selectedFile.value = null;
-            drawerVisible.value = true;
-        }else{
-            ElMessage.error(result.msg || '获取电影详情失败');
-        }
-    }catch(error){
-        console.error(error);
-        ElMessage.error('请求电影详情异常');
-    }
-
-    // 2. 将这行的数据“深拷贝”一份，填充到我们的表单数据对象 movie 中
-    //    使用深拷贝是为了避免在表单中修改时，表格里的数据也跟着实时变化
-    // movie.value = JSON.parse(JSON.stringify(row));
     
-    // 3. 设置封面预览图
-    //coverPreviewUrl.value = row.coverUrl || '';
-
-    // 4. 打开抽屉
-   // drawerVisible.value = true;
-
-    // 5. 清空上一次可能选择的文件
-    //selectedFile.value = null;console.log("1. 点击了编辑按钮，电影ID:", row.movieID);
     formTitle.value = '编辑电影';
     
     try {
@@ -242,7 +232,7 @@ const handleEdit = async(row) => {
         console.log("2. 收到来自后端的数据:", result); // 打印完整的响应体
 
         // 健壮性判断：确保result和result.data都存在
-        if (result && result.code === 1 && result.data) {
+        if (result.code) {
             console.log("3. 验证通过，准备填充表单");
             movie.value = result.data; // 将返回的数据赋值给表单模型
             
@@ -322,6 +312,19 @@ const rules = {
 
             </el-table-column>
         </el-table>
+
+        <div class="pagination-container">
+            <el-pagination
+                background
+                layout=" sizes, prev, pager, next, jumper, ->, total"
+                :total="total"
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[5, 10, 15, 50]"
+                @size-change="handleSizeChange"
+                @current-change="handlePageChange"
+            />
+        </div>
     </div>
 
 
@@ -467,6 +470,12 @@ const rules = {
 
     .upload .elbutton{
         margin-top: 5px;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: end;
+        margin-top: 20px;
     }
 
 </style>

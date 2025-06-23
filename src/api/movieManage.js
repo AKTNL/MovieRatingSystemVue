@@ -1,15 +1,16 @@
 import request from "@/utils/request";
 
-//获取电影列表
-export const queryAllApi = () => request.get('/movies');
+const BASE_URL = '/api/movies'; // 所有请求都基于 /api/movies
 
-//新增
-export const addApi = (movie) => request.post('/movies',movie);
+// queryAllApi现在应该调用分页接口
+export const queryAllApi = (params) => request.get(BASE_URL, { params });
 
-//删除
-export const deleteByIdApi = (id) => request.delete(`/movies?MovieID=${id}`);
+export const addApi = (movie) => request.post(BASE_URL, movie);
 
-//修改
-export const updateApi = (movieId) => request.put('/movies',movieId);
+export const updateApi = (movie) => request.put(BASE_URL, movie);
 
-export const getMovieForEditApi = (id) => request.get(`/movie?MovieID=${id}`);
+// 删除接口现在需要拼接ID
+export const deleteByIdApi = (id) => request.delete(`${BASE_URL}/${id}`);
+
+// 获取单个电影的接口也需要拼接ID
+export const getMovieForEditApi = (id) => request.get(`${BASE_URL}/${id}`);
