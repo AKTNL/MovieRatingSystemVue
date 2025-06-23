@@ -23,7 +23,8 @@ const router = createRouter({
 
       {path: '/home',name: 'home',component: HomeVue},
       {path: '/login',name: 'login',component: LoginVue},
-      {path: '/movie',name: 'movie',component: MovieVue},
+
+      {path: '/movie/:id',name: 'movie',component: MovieVue},
       {path: '/rating',name: 'rating',component: RatingVue },
       
       { 
