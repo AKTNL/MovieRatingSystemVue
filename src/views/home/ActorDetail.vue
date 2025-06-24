@@ -1,38 +1,33 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getDirectorDetailApi } from '@/api/director';
-import { getMoviesByDirectorApi } from '@/api/movie'; // 确保你的API函数名和路径正确
+import { getActorDetailApi, getMoviesByActorApi } from '@/api/actor';
 import { ArrowLeft, User, Calendar, Flag, Picture } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 
 const route = useRoute();
 const router = useRouter();
 
-const directorDetail = ref(null);
+const actorDetail = ref(null);
 const movieList = ref([]);
 const isLoading = ref(true);
 
 onMounted(() => {
-  const directorId = route.params.id;
-  if (directorId) {
-    fetchAllData(directorId);
+  const actorId = route.params.id;
+  if (actorId) {
+    fetchAllData(actorId);
   }
 });
 
-const fetchAllData = async (directorId) => {
+const fetchAllData = async (actorId) => {
   isLoading.value = true;
   try {
     const [resDetail, resMovies] = await Promise.all([
-      getDirectorDetailApi(directorId),
-      getMoviesByDirectorApi(directorId)
+      getActorDetailApi(actorId),
+      getMoviesByActorApi(actorId)
     ]);
-    if (resDetail.code) {
-      directorDetail.value = resDetail.data;
-    }
-    if (resMovies.code) {
-      movieList.value = resMovies.data;
-    }
+    if (resDetail.code) actorDetail.value = resDetail.data;
+    if (resMovies.code) movieList.value = resMovies.data;
   } catch (error) {
     ElMessage.error("加载数据失败，请稍后再试");
   } finally {
@@ -47,18 +42,19 @@ const fetchAllData = async (directorId) => {
       <el-page-header :icon="ArrowLeft" @back="() => router.go(-1)" :title="`返回`">
         <template #content>
           <div class="header-content">
-            <el-avatar :size="64" :src="directorDetail?.photoUrl">
-              <el-icon :size="30"><User /></el-icon> </el-avatar>
+            <el-avatar :size="64" :src="actorDetail?.photoUrl">
+              <el-icon :size="30"><User /></el-icon>
+            </el-avatar>
             <div class="header-text">
-              <span class="header-title">{{ directorDetail?.name }}</span>
-              <span class="header-subtitle">导演详情</span>
+              <span class="header-title">{{ actorDetail?.name }}</span>
+              <span class="header-subtitle">演员详情</span>
             </div>
           </div>
         </template>
       </el-page-header>
     </el-card>
 
-    <div v-if="directorDetail" class="detail-grid">
+    <div v-if="actorDetail" class="detail-grid">
       <div class="left-panel">
         <el-card shadow="hover">
           <template #header>
@@ -69,19 +65,19 @@ const fetchAllData = async (directorId) => {
           <el-descriptions :column="1" border>
             <el-descriptions-item>
               <template #label><el-icon><User /></el-icon> 姓名</template>
-              {{ directorDetail.name }}
+              {{ actorDetail.name }}
             </el-descriptions-item>
             <el-descriptions-item>
-              <template #label><el-icon><Male /></el-icon> 性别</template>
-              {{ directorDetail.gender }}
+              <template #label><el-icon><Female v-if="actorDetail.gender==='女'"/><Male v-else/></el-icon> 性别</template>
+              {{ actorDetail.gender }}
             </el-descriptions-item>
             <el-descriptions-item>
               <template #label><el-icon><Calendar /></el-icon> 出生日期</template>
-              {{ directorDetail.birthDate }}
+              {{ actorDetail.birthDate }}
             </el-descriptions-item>
             <el-descriptions-item>
               <template #label><el-icon><Flag /></el-icon> 国籍</template>
-              {{ directorDetail.nationality }}
+              {{ actorDetail.nationality }}
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
@@ -99,8 +95,10 @@ const fetchAllData = async (directorId) => {
                 <h3 class="title">{{ movie.title }} <span class="year">({{ movie.releaseYear }})</span></h3>
               </router-link>
               <div class="info-line">
-                <span class="label">主演:</span>
-                <span class="value actors">{{ movie.actorsList }}</span>
+                <span class="label">导演:</span><span class="value">{{ movie.directorName }}</span>
+              </div>
+              <div class="info-line">
+                <span class="label">主演:</span><span class="value actors">{{ movie.actorsList }}</span>
               </div>
             </div>
             <div class="rating-block">
@@ -121,12 +119,11 @@ const fetchAllData = async (directorId) => {
 <style scoped>
 .page-container {
   padding: 20px;
-  min-height: calc(100vh - 40px); /* 确保撑满屏幕，减去padding */
 }
 .page-header-card {
   margin-bottom: 20px;
   /* 去掉卡片默认的内边距，让PageHeader撑满 */
-  --el-card-padding: 15px 20px; 
+  --el-card-padding: 0px; 
 }
 .header-content {
   display: flex;
@@ -150,23 +147,23 @@ const fetchAllData = async (directorId) => {
 /* 采用Grid布局，创建更灵活的两栏结构 */
 .detail-grid {
   display: grid;
-  grid-template-columns: 350px 1fr; /* 左侧固定350px，右侧自适应 */
+  grid-template-columns: 320px 1fr; /* 左侧固定320px，右侧自适应 */
   gap: 20px;
   align-items: flex-start;
 }
 
-/* 左侧卡片 */
 .left-panel .card-header {
   font-size: 18px;
   font-weight: 500;
 }
+.left-panel .el-descriptions__label {
+  width: 110px;
+}
 .left-panel .el-icon {
   vertical-align: middle;
-  margin-right: 8px;
-  font-size: 16px;
+  margin-right: 5px;
 }
 
-/* 右侧作品列表 */
 .right-panel .section-title {
   font-size: 20px;
   font-weight: 500;
@@ -174,7 +171,6 @@ const fetchAllData = async (directorId) => {
 }
 .movie-row {
   display: flex;
-  align-items: center;
   padding: 16px 0;
   border-bottom: 1px solid #f0f2f5;
 }
@@ -182,43 +178,32 @@ const fetchAllData = async (directorId) => {
   border-bottom: none;
 }
 .movie-poster {
-  width: 60px;
-  height: 90px;
+  width: 80px;
+  height: 120px;
   flex-shrink: 0;
   border-radius: 4px;
 }
-.image-slot {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  background: #f5f7fa;
-  color: #c0c4cc;
-  font-size: 24px;
-}
 .info-block {
   flex-grow: 1;
-  margin: 0 16px;
+  margin: 0 20px;
 }
 .title-link { text-decoration: none; }
 .title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   color: #303133;
-  margin: 0 0 8px 0;
-  display: inline-block;
+  margin: 0 0 10px 0;
 }
 .title:hover { color: #409eff; }
 .year {
   color: #909399;
-  font-size: 15px;
+  font-size: 16px;
   margin-left: 8px;
 }
 .info-line {
   font-size: 13px;
   color: #606266;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 .label {
   margin-right: 8px;
@@ -226,7 +211,7 @@ const fetchAllData = async (directorId) => {
 .actors {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   overflow: hidden;
 }
 .rating-block {
@@ -234,10 +219,9 @@ const fetchAllData = async (directorId) => {
   flex-shrink: 0;
 }
 .rating-score {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: bold;
   color: #ff9900;
-  margin-bottom: 4px;
 }
 .no-rating {
   font-size: 14px;

@@ -14,3 +14,5 @@ export const deleteDirectorApi = (id) => request.delete(`/directors?DirectorID=$
 export const searchDirectorsApi = (query) => request.get(`/directors/search`, { params: { name: query } });
 
 export const getDirectorDetailApi = (id) => request.get(`/directors/${id}`);
+
+//export const getMoviesByDirectorApi = (directorId) => request.get(`/directors/by-director/${directorId}`);

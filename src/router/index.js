@@ -16,6 +16,7 @@ import ChangePasswordVue from '@/views/user/ChangePassword.vue'
 import MyReviewsVue from '@/views/user/MyReviews.vue'
 import SearchResultVue from '@/views/home/SearchResult.vue';
 import DirectorDetailVue from '@/views/home/DirectorDetail.vue';
+import ActorDetailVue from '@/views/home/ActorDetail.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,7 +26,9 @@ const router = createRouter({
 
       {path: '/home',name: 'home',component: HomeVue},
 
-      {path: '/director/:id',name: 'directorDetail',component: DirectorDetailVue},
+      {path: '/directors/:id',name: 'directorDetail',component: DirectorDetailVue},
+
+      {path: '/actors/:id',name: 'actorDetail',component: ActorDetailVue },
 
       {path: '/search',name: 'search',component: SearchResultVue},
 

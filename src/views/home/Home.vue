@@ -130,10 +130,9 @@ const handleSelect = (item) => {
   if (item.type === 'movie') {
     router.push(`/movie/${item.id}`);
   } else if (item.type === 'director') {
-    router.push(`/director/${item.id}`); // 假设将来有导演详情页
+    router.push(`/directors/${item.id}`); // 导演详情页
   } else if (item.type === 'actor') {
-    // router.push(`/actor/${item.id}`); // 假设将来有演员详情页
-    ElMessage.info(`跳转到演员 ${item.id} 的详情页（待实现）`);
+    router.push(`/actors/${item.id}`); // 演员详情页
   }
 };
 

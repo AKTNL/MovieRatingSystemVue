@@ -16,3 +16,7 @@ export const updateActorApi = (actor) => request.put(BASE_URL, actor);
 export const deleteActorApi = (id) => request.delete(`${BASE_URL}/${id}`);
 
 export const searchActorsApi = (query) => request.get(`${BASE_URL}/search`, { params: { name: query } });
+
+export const getActorDetailApi = (id) => request.get(`${BASE_URL}/${id}`);
+
+//export const getMoviesByActorApi = (actorId) => request.get(`${BASE_URL}/by-actor/${actorId}`);
