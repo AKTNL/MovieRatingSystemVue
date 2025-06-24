@@ -5,6 +5,7 @@ import { ElMessage,ElMessageBox } from 'element-plus';
 import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 import { getHotMoviesApi,getMovieListApi } from '@/api/home';
+import { getSearchSuggestionsApi } from '@/api/search';
 
 const userStore = useUserStore();
 const { userInfo } = storeToRefs(userStore);
@@ -86,7 +87,8 @@ const handleUserCommand = (command) => {
     .then(async() => {
         
         userStore.clearUserInfo();
-        ElMessage.success('退出登录成功');
+
+        ElMessage.success('已退出');
         
         router.push('/login');
     })
@@ -103,27 +105,66 @@ const onSearch = () => {
         ElMessage.error('请输入搜索内容！')
         return
     }
-    alert(`开始搜索: ${searchKeyword.value}`)
-    // 之后可以调用 API 发送搜索请求
+
+    router.push({ path: '/search', query: { keyword: searchKeyword.value } });
 }
 
+const querySearchAsync = async (queryString, cb) => {
+  if (!queryString) {
+    cb([]); // 如果输入为空，返回空列表
+    return;
+  }
+  // 调用后端API获取建议
+  const res = await getSearchSuggestionsApi(queryString);
+  if (res.code) {
+    cb(res.data); // 调用回调函数 cb，将建议列表传给 el-autocomplete
+  } else {
+    cb([]);
+  }
+};
+
+// 当用户从下拉列表中选择一项时触发
+const handleSelect = (item) => {
+  console.log('选中的项目:', item);
+  // 根据类型跳转到不同的详情页
+  if (item.type === 'movie') {
+    router.push(`/movie/${item.id}`);
+  } else if (item.type === 'director') {
+    router.push(`/director/${item.id}`); // 假设将来有导演详情页
+  } else if (item.type === 'actor') {
+    // router.push(`/actor/${item.id}`); // 假设将来有演员详情页
+    ElMessage.info(`跳转到演员 ${item.id} 的详情页（待实现）`);
+  }
+};
 
 </script>
 
 <template>
     <el-container class="home-container">
-        <el-header class="home-header">
+        <el-header class="home-header is-sticky">
+
+            <div class="header-logo">
+                <el-icon><Film /></el-icon>
+                <span>电影评分系统</span>
+            </div>
+
             <div class="header-search">
-                <el-input placeholder="搜索电影、导演、演员..."
-                    clearable
-                    class="search-input"
+                <el-autocomplete
                     v-model="searchKeyword"
-                    @keyup.enter="onSearch"
+                    :fetch-suggestions="querySearchAsync"
+                    placeholder="搜索电影、导演、演员..."
+                    @select="handleSelect"
+                    class="search-input"
+                    clearable
                 >
-                    <template #suffix>
-                        <el-icon class="el-input__icon" @click="onSearch"><Search /></el-icon>
+                    <template #default="{ item }">
+                        <div class="suggestion-item">
+                            <span class="value">{{ item.value }}</span>
+                            <el-tag size="small" type="info">{{ item.type }}</el-tag>
+                            <!-- <span class="type-tag">{{ item.type }}</span> -->
+                        </div>
                     </template>
-                </el-input>
+                </el-autocomplete>
             </div>
 
             <div class="header-user">
@@ -251,6 +292,8 @@ const onSearch = () => {
         flex-direction: column;
     }
 
+    
+
     /* 头部布局 */
     .home-header {
         display: flex;
@@ -267,13 +310,26 @@ const onSearch = () => {
         z-index: 10;
     }
 
+.header-logo {
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #409EFF; /* 或者你的主题色 */
+    gap: 8px;
+}
+
     /* 头部搜索框 */
     .header-search { 
-        flex: 1;
+       
+        display: flex;
+        justify-content: center; /* 让内部的搜索框在容器内居中 */
     }
 
     .search-input {
-        width: 360px;
+        width: 50%; /* 宽度占据父容器的一半 */
+        max-width: 600px; /* 但最宽不超过600px */
+        min-width: 300px; /* 最窄也不低于300px，防止在小屏幕上变得过窄 */
     }
 
     .el-input__icon{
@@ -523,4 +579,14 @@ const onSearch = () => {
         font-size: 14px;
         color: #909399;
     }
+
+.suggestion-item {
+  display: flex;
+  /* justify-content: space-between; */
+  width: 100%;
+}
+.type-tag {
+  font-size: 12px;
+  color: #909399;
+}
 </style>

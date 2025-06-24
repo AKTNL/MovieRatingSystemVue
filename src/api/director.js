@@ -12,3 +12,5 @@ export const updateDirectorApi = (director) => request.put('/directors', directo
 export const deleteDirectorApi = (id) => request.delete(`/directors?DirectorID=${id}`);
 
 export const searchDirectorsApi = (query) => request.get(`/directors/search`, { params: { name: query } });
+
+export const getDirectorDetailApi = (id) => request.get(`/directors/${id}`);
