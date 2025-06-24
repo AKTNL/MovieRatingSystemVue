@@ -168,7 +168,8 @@ const onSearch = () => {
 
                                     <div class="carousel-rating">
                                         <el-rate :model-value="movie.rating / 2" disabled size="small" text-color="#ff9900" />
-                                        <span class="rating-score">{{ movie.rating }}分</span>
+                                        <span class="rating-score">{{ movie.rating.toFixed(1) }}分</span>
+
                                     </div>
                             
                                 </div>
