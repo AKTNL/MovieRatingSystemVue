@@ -5,6 +5,11 @@ import { ElMessage } from 'element-plus';
 import { ArrowLeft, Film, User, Calendar, Clock, ChatDotSquare, Star } from '@element-plus/icons-vue';
 import { getMovieDetailApi } from '@/api/movie'; 
 
+import { getReviewsByMovieIdApi,addReviewApi,updateReviewApi,deleteReviewApi } from '@/api/review';
+import { useUserStore } from '@/stores/userStore';
+
+const userStore = useUserStore();
+
 const router = useRouter();
 const route = useRoute();
 
@@ -36,14 +41,44 @@ const goBack = () => {
   router.go(-1);
 };
 
-// 提交评论（功能占位）
-const submitReview = () => {
-  console.log('用户评分:', userRating.value);
-  console.log('用户评论:', userComment.value);
-  ElMessage.success('评论提交成功！（功能待实现）');
+// 提交评论
+const submitReview = async () => {
+  // 1. 前端校验
+  if (userRating.value === 0) {
+    ElMessage.warning('请先为电影评分');
+    return;
+  }
+  if (!userComment.value.trim()) {
+    ElMessage.warning('请输入评论内容');
+    return;
+  }
+
+  // 2. 准备提交给后端的数据包
+  const reviewData = {
+    movieID: movieDetail.value.movieID,
+    rating: userRating.value * 2, // el-rate是5分制，我们的数据库是10分制，所以乘以2
+    comment: userComment.value
+  };
+
+  try {
+    // 3. 调用API
+    const res = await addReviewApi(reviewData);
+    if (res.code) {
+      ElMessage.success('评论发表成功！');
+      // 4. 成功后可以清空表单
+      userRating.value = 0;
+      userComment.value = '';
+      // 5. 重新获取一次电影详情，以更新平均分和显示新评论
+      fetchMovieDetail(movieDetail.value.movieID);
+    } else {
+      ElMessage.error(res.msg);
+    }
+  } catch (error) {
+    console.error(error);
+  }
 };
 
-// --- 将来获取真实数据的逻辑 ---
+// --- 获取真实数据的逻辑 ---
 onMounted(() => {
   const movieId = route.params.id; // 从路由中获取电影ID
   console.log('当前电影ID:', movieId);
@@ -52,6 +87,24 @@ onMounted(() => {
   }
 });
 
+
+const myReview = ref({
+  reviewID: 101,
+  rating: 10.0, // 10分制
+  comment: '在我心中是无法被超越的神作！每次看都有新的感受。',
+  createTime: '2025-06-20'
+});
+// 如果myReview为null，则显示评论框
+
+// 其他用户的影评列表
+const otherReviews = ref([
+  { reviewID: 201, username: '影迷A', avatarUrl: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png', rating: 9.0, comment: '结构精巧，叹为观止。', createTime: '2025-06-15', likes: 128 },
+  { reviewID: 202, username: '小C', avatarUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png', rating: 10.0, comment: '诺兰从不让人失望！', createTime: '2025-05-11', likes: 99 },
+]);
+
+// 新评论和评分的数据模型
+const newRating = ref(0);
+const newComment = ref('');
 
 </script>
 
@@ -74,12 +127,13 @@ onMounted(() => {
           <h1 class="movie-title">{{ movieDetail.title }} <span class="release-year">({{ movieDetail.releaseYear }})</span></h1>
           
           <el-descriptions :column="1" class="movie-meta">
-            <el-descriptions-item label="导演">{{ movieDetail.directorName }}</el-descriptions-item>
-            <el-descriptions-item label="主演">{{ movieDetail.actorsList }}</el-descriptions-item>
-            <el-descriptions-item label="类型">{{ movieDetail.genre }}</el-descriptions-item>
-            <el-descriptions-item label="制片国家/地区">{{ movieDetail.country }}</el-descriptions-item>
-            <el-descriptions-item label="语言">{{ movieDetail.language }}</el-descriptions-item>
-            <el-descriptions-item label="片长">{{ movieDetail.duration }} 分钟</el-descriptions-item>
+
+            <el-descriptions-item label="导演:">{{ movieDetail.directorName }}</el-descriptions-item>
+            <el-descriptions-item label="主演:">{{ movieDetail.actorsList }}</el-descriptions-item>
+            <el-descriptions-item label="类型:">{{ movieDetail.genre }}</el-descriptions-item>
+            <el-descriptions-item label="制片国家/地区:">{{ movieDetail.country }}</el-descriptions-item>
+            <el-descriptions-item label="语言:">{{ movieDetail.language }}</el-descriptions-item>
+            <el-descriptions-item label="片长:">{{ movieDetail.duration }} 分钟</el-descriptions-item>
           </el-descriptions>
 
           <div class="rating-section">
@@ -87,7 +141,7 @@ onMounted(() => {
             <div class="rating-value">
               <strong>{{ movieDetail.rating.toFixed(1) }}</strong>
             </div>
-            <el-rate :model-value="movieDetail.rating" disabled size="large" />
+            <el-rate :model-value="movieDetail.rating / 2" disabled size="large" />
           </div>
         </div>
       </div>

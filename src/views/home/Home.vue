@@ -165,11 +165,12 @@ const onSearch = () => {
                                 <div class="carousel-overlay"></div>
                                 <div class="carousel-text">
                                     <h3 class="carousel-title">{{ movie.title }}</h3>
+
                                     <div class="carousel-rating">
-                                        <el-rate :model-value="movie.rating " disabled size="small" text-color="#ff9900" />
-                                        <span class="rating-score">{{ movie.rating }}</span>
+                                        <el-rate :model-value="movie.rating / 2" disabled size="small" text-color="#ff9900" />
+                                        <span class="rating-score">{{ movie.rating }}分</span>
                                     </div>
-                                    <p class="carousel-director">导演: {{ movie.directorName }}</p>
+                            
                                 </div>
                             </div>
                         </router-link>
@@ -358,6 +359,7 @@ const onSearch = () => {
         position: relative;
         z-index: 2;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        margin-bottom: 20px;
     }
     .carousel-title {
         font-size: 26px;
@@ -378,6 +380,7 @@ const onSearch = () => {
         font-weight: bold;
         color: #E6A23C;
         margin-left: 10px;
+        margin-bottom: 8px;
     }
     .carousel-director {
         font-size: 14px;
