@@ -13,3 +13,7 @@ export const getOtherReviewsApi = (movieId, page, size) => request.get(`/reviews
 export const getMyReviewsByPageApi = (params) => request.get(`/reviews/my-list`,{ params })
 
 export const getReviewsForAdminApi = (params) => request.get(`/reviews/admin/list`,{params})
+
+export const searchReviewsByMovieApi = (movieId, params) => {
+    return request.get(`/reviews/admin/search`, { params: { movieId, ...params } });
+}

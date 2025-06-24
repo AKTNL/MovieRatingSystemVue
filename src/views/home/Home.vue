@@ -1,5 +1,5 @@
 <script setup>
-import { ref,onMounted } from 'vue';
+import { ref,onMounted,watch,computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage,ElMessageBox } from 'element-plus';
 import { useUserStore } from '@/stores/userStore';
@@ -24,6 +24,27 @@ const totalMovies = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
 
+// --- 新增：筛选和排序的状态 ---
+const selectedGenre = ref('');
+const selectedYear = ref('');
+const sortBy = ref('releaseYear'); // 默认按年份排序
+
+// --- 新增：动态生成年份选项 ---
+const currentYear = new Date().getFullYear();
+const yearOptions = computed(() => {
+  const years = [];
+  for (let i = currentYear; i >= 1990; i--) {
+    years.push(i);
+  }
+  return years;
+});
+
+// --- 关键：使用 watch 来监听筛选条件的变化 ---
+watch([selectedGenre, selectedYear, sortBy], () => {
+  // 任何筛选条件变化，都回到第1页重新搜索
+  fetchMovieList(1);
+});
+
 onMounted(() => {
   fetchHotMovies();
   fetchMovieList(1);
@@ -45,7 +66,13 @@ const fetchHotMovies = async () => {
 
 const fetchMovieList = async (page) => { 
     try {
-        const params = { page: page, size: pageSize.value };
+        const params = { 
+            page, 
+            size: pageSize.value,
+            genre: selectedGenre.value, // 筛选条件
+            year: selectedYear.value, // 筛选条件
+            sortBy: sortBy.value, // 排序条件
+        };
         const result = await getMovieListApi(params);
         if (result.code) {
             movieList.value = result.data.records; // 后端PageResult里的当前页数据
@@ -220,6 +247,23 @@ const handleSelect = (item) => {
             </section>
             <el-divider border-style="double" />
             
+            <section class="filter-section">
+                <el-select v-model="selectedGenre" placeholder="所有类型" clearable style="width: 180px;">
+                    <el-option label="剧情" value="剧情" />
+                    <el-option label="喜剧" value="喜剧" />
+                    <el-option label="动作" value="动作" />
+                    <el-option label="科幻" value="科幻" />
+                </el-select>
+
+                <el-select v-model="selectedYear" placeholder="所有年份" clearable style="width: 180px;">
+                    <el-option v-for="year in yearOptions" :key="year" :label="`${year}年`" :value="year" />
+                </el-select>
+
+                <el-radio-group v-model="sortBy">
+                    <el-radio-button label="releaseYear">按时间排序</el-radio-button>
+                    <el-radio-button label="rating">按评分排序</el-radio-button>
+                </el-radio-group>
+            </section>
 
             <section class="section list-section">
                 <div class="section-header">
@@ -460,6 +504,16 @@ const handleSelect = (item) => {
         background-color: #e0e0e0;
         border-radius: 8px;
     }
+
+.filter-section {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 8px;
+}
 
     .list-section {
         margin-top: 40px;

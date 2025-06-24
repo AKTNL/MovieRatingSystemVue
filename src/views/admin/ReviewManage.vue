@@ -3,29 +3,58 @@ import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete } from '@element-plus/icons-vue';
 // 假设你创建了一个新的API文件或在其中添加了新函数
-import { getReviewsForAdminApi, deleteReviewApi } from '@/api/review';
+import { getReviewsForAdminApi, deleteReviewApi,searchReviewsByMovieApi } from '@/api/review';
+import { getAllMoviesForSelectApi } from '@/api/movie'; 
 
 const reviewList = ref([]);
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
+const movieTitleFilter = ref(''); // 新增：用于绑定搜索框
+
+const movieListForSelect = ref([]); // 存放所有电影，用于下拉框
+const filterMovieId = ref(''); // 绑定下拉框 v-model 的值
 
 const search = async (page = 1) => {
   const params = { page, size: pageSize.value };
-  try {
-    const res = await getReviewsForAdminApi(params);
-    if (res.code) {
-      reviewList.value = res.data.records;
-      total.value = res.data.total;
-      currentPage.value = page;
-    }
-  } catch (error) {
-    console.error("获取影评列表失败", error);
+  let res;
+  // 如果搜索框有内容，就调用新的搜索API
+  if (filterMovieId.value) {
+    res = await searchReviewsByMovieApi(filterMovieId.value, params);
+  } else {
+    // 否则，调用原来的获取全部列表的API
+    res = await getReviewsForAdminApi(params);
   }
+
+  if (res.code) {
+    reviewList.value = res.data.records;
+    total.value = res.data.total;
+    currentPage.value = page;
+  }
+
 };
 
-onMounted(() => search(1));
+const handleFilterChange = () => {
+  search(1); // 总是从第一页开始显示筛选结果
+};
 
+// 新增：搜索按钮的点击事件
+const handleSearch = () => {
+  searchReviews(1); // 搜索时，总是从第一页开始
+};
+
+onMounted(() => {
+  search(1); // 默认加载所有评论
+  
+  // 获取电影列表用于筛选
+  const fetchMoviesForSelect = async () => {
+    const res = await getAllMoviesForSelectApi();
+    if (res.code) {
+      movieListForSelect.value = res.data;
+    }
+  };
+  fetchMoviesForSelect();
+});
 const handlePageChange = (newPage) => search(newPage);
 const handleSizeChange = (newSize) => {
   pageSize.value = newSize;
@@ -53,7 +82,24 @@ const handleDelete = (id) => {
   <div class="manage-container">
     <div class="header">
       <h1>电影评论管理</h1>
+      <div class="filter-area">
+        <el-select
+          v-model="filterMovieId"
+          placeholder="按电影名称筛选"
+          filterable
+          clearable
+          @change="handleFilterChange"
+          style="width: 300px;"
+        >
+          <el-option
+            v-for="movie in movieListForSelect"
+            :key="movie.movieID"
+            :label="movie.title"
+            :value="movie.movieID"
+          />
+        </el-select>
       </div>
+    </div>
     
     <el-table :data="reviewList" border stripe>
       <el-table-column type="index" label="序号" width="70" align="center" />

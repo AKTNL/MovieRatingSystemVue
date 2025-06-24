@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getActorDetailApi, getMoviesByActorApi } from '@/api/actor';
+import { getActorDetailApi } from '@/api/actor';
+import { getMoviesByActorApi } from '@/api/movie';
 import { ArrowLeft, User, Calendar, Flag, Picture } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 
